@@ -33,3 +33,4 @@
 *.txt
 Makefile
 cmake-build-debug/
+.idea/
