@@ -3,6 +3,7 @@
  */
 
 #include "Partitioning.h"
+#include <ctime>
 
 
 int s_recursive(int n,int k)
@@ -26,20 +27,24 @@ int s_dynamic(int n,int k)
 
 int b_recursive(int n)
 {
+    clock_t time = clock();
 	int b = 0;
 	for(int i = 1; i <= n; i++){
 		b+=s_recursive(n, i);
 	}
-	return b;
+    cout << (clock() - time) << endl;
+    return b;
 }
 
 int b_dynamic(int n)
 {
-	int b = 0;
+    clock_t time = clock();
+    int b = 0;
 	for(int i = 1; i <= n; i++){
 		b+=s_dynamic(n, i);
 	}
-	return b;
+    cout << (clock() - time) << endl;
+    return b;
 }
 
 
