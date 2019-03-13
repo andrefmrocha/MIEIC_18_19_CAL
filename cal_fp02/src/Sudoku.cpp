@@ -88,13 +88,40 @@ bool Sudoku::isComplete()
 
 
 
+
+
 /**
  * Resolve o Sudoku.
  * Retorna indica??o de sucesso ou insucesso (sudoku imposs?vel).
  */
 bool Sudoku::solve()
 {
-	return false;
+	vector<int> lowest_solution(10);
+	int x = -1, y = -1;
+	while (!this->isComplete()){
+        for(int i = 0; i < 10; i++){
+            for(int j = 0; j < 10; j++){
+                vector<int> newest_solution = this->possibleNumbers(i, j);
+                if(newest_solution.empty())
+                    continue;
+                if(newest_solution.size() < lowest_solution.size() && !newest_solution.empty()){
+                    lowest_solution = newest_solution;
+                    x = i;
+                    y = j;
+                }
+            }
+        }
+
+        if(x == -1 && y == -1)
+            return false;
+        this->numbers[x][y] = lowest_solution[0];
+        this->countFilled++;
+        this->columnHasNumber[x][lowest_solution[0]] = true;
+        this->lineHasNumber[y][lowest_solution[0]] = true;
+        this->block3x3HasNumber[x/3][y/3][lowest_solution[0] - 1] = true;
+        lowest_solution.clear();
+    }
+	return this->isComplete();
 }
 
 
@@ -104,11 +131,25 @@ bool Sudoku::solve()
  */
 void Sudoku::print()
 {
-	for (int i = 0; i < 9; i++)
-	{
+	for (int i = 0; i < 9; i++){
 		for (int a = 0; a < 9; a++)
 			cout << this->numbers[i][a] << " ";
 
 		cout << endl;
 	}
+}
+
+
+
+vector<int> Sudoku::possibleNumbers(int x, int y) {
+	vector<int> possibleSols;
+	for(int i = 1; i <= 9; i++ ){
+		if(isNumberPossible(x, y, i))
+			possibleSols.push_back(i);
+	}
+    return possibleSols;
+}
+
+bool Sudoku::isNumberPossible(int x, int y, int num) {
+	return (this->columnHasNumber[x][num] || this->lineHasNumber[y][num] || this->block3x3HasNumber[x/3][y/3][num]);
 }
