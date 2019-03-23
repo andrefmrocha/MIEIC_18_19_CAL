@@ -7,6 +7,7 @@
 #include <vector>
 #include <queue>
 #include <iterator>
+#include <deque>
 using namespace std;
 
 template <class T> class Edge;
@@ -22,7 +23,6 @@ class Vertex {
 	vector<Edge<T> > adj;  // list of outgoing edges
 	bool visited;          // auxiliary field used by dfs and bfs
 	int indegree;          // auxiliary field used by topsort
-	bool processing;       // auxiliary field used by isDAG
 
 	void addEdge(Vertex<T> *dest, double w);
 	bool removeEdgeTo(Vertex<T> *d);
@@ -47,7 +47,6 @@ class Graph {
 
 	void dfsVisit(Vertex<T> *v,  vector<T> & res) const;
 	Vertex<T> *findVertex(const T &in) const;
-	bool dfsIsDAG(Vertex<T> *v) const;
 public:
 	int getNumVertex() const;
 	bool addVertex(const T &in);
@@ -240,11 +239,30 @@ void Graph<T>::dfsVisit(Vertex<T> *v, vector<T> & res) const {
  */
 template <class T>
 vector<T> Graph<T>::bfs(const T & source) const {
-	// TODO (22 lines)
 	// HINT: Use the flag "visited" to mark newly discovered vertices .
 	// HINT: Use the "queue<>" class to temporarily store the vertices.
-	vector<T> res;
-	return res;
+    typename vector<Vertex<T> *>::const_iterator it;
+    queue<Vertex<T> *> nextVertex;
+    vector<T> res;
+    for(it = this->vertexSet.begin(); it != this->vertexSet.end(); it++){
+        (*it)->visited = false;
+    }
+
+    nextVertex.push(*this->vertexSet.begin());
+    while(!nextVertex.empty()){
+        Vertex<T> * vertex = nextVertex.front();
+        vertex->visited = true;
+        nextVertex.pop();
+        res.push_back(vertex->info);
+        typename vector<Edge<T>>::iterator it = vertex->adj.begin();
+        for (it; it != vertex->adj.end(); it++){
+            if(!it->dest->visited){
+                nextVertex.push(it->dest);
+            }
+        }
+
+    }
+    return res;
 }
 
 /****************** 2c) toposort ********************/
@@ -258,9 +276,40 @@ vector<T> Graph<T>::bfs(const T & source) const {
 
 template<class T>
 vector<T> Graph<T>::topsort() const {
-	// TODO (26 lines)
-	vector<T> res;
-	return res;
+    vector<T> res;
+    if(this->isDAG())
+        return res;
+    typename vector<Vertex<T> *>::const_iterator it;
+    queue<Vertex<T> *> nextVertex;
+    for(it = this->vertexSet.begin(); it != this->vertexSet.end(); it++){
+        (*it)->visited = false;
+        (*it)->indegree = 0;
+    }
+
+    for(it = this->vertexSet.begin(); it != this->vertexSet.end(); it++){
+        typename vector<Edge<T>>::const_iterator adj;
+        for(adj = (*it)->adj.begin(); adj != (*it)->adj.end(); adj++){
+            adj->dest->indegree++;
+        }
+    }
+
+    for(it = this->vertexSet.begin(); it != this->vertexSet.end(); it++) {
+        if((*it)->indegree == 0)
+            nextVertex.push(*it);
+    }
+    while(!nextVertex.empty()){
+        Vertex<T> * vertex = nextVertex.front();
+        vertex->visited = true;
+        nextVertex.pop();
+        res.push_back(vertex->info);
+        typename vector<Edge<T>>::iterator it = vertex->adj.begin();
+        for (it; it != vertex->adj.end(); it++){
+            if(--it->dest->indegree == 0)
+                nextVertex.push(it->dest);
+        }
+
+    }
+    return res;
 }
 
 /****************** 3a) maxNewChildren (HOME WORK)  ********************/
@@ -275,8 +324,35 @@ vector<T> Graph<T>::topsort() const {
 
 template <class T>
 int Graph<T>::maxNewChildren(const T & source, T &inf) const {
-	// TODO (28 lines, mostly reused)
-	return 0;
+    int max_childs = 0;
+    typename vector<Vertex<T> *>::const_iterator it;
+    queue<Vertex<T> *> nextVertex;
+    vector<T> res;
+    for(it = this->vertexSet.begin(); it != this->vertexSet.end(); it++){
+        (*it)->visited = false;
+    }
+
+    nextVertex.push(*this->vertexSet.begin());
+    while(!nextVertex.empty()){
+        Vertex<T> * vertex = nextVertex.front();
+        vertex->visited = true;
+        nextVertex.pop();
+        res.push_back(vertex->info);
+        int new_childs = 0;
+        typename vector<Edge<T>>::iterator it = vertex->adj.begin();
+        for (it; it != vertex->adj.end(); it++){
+            if(!it->dest->visited){
+                nextVertex.push(it->dest);
+                new_childs++;
+            }
+        }
+        if(new_childs > max_childs){
+            max_childs = new_childs;
+            inf = vertex->info;
+        }
+
+    }
+	return max_childs;
 }
 
 /****************** 3b) isDAG   (HOME WORK)  ********************/
@@ -291,19 +367,33 @@ int Graph<T>::maxNewChildren(const T & source, T &inf) const {
 
 template <class T>
 bool Graph<T>::isDAG() const {
-	// TODO (9 lines, mostly reused)
-	// HINT: use the auxiliary field "processing" to mark the vertices in the stack.
+    typename vector<Vertex<T> *>::const_iterator it;
+    deque<Vertex<T> *> nextVertex;
+    for(it = this->vertexSet.begin(); it != this->vertexSet.end(); it++){
+        (*it)->visited = false;
+    }
+
+    nextVertex.push_front(*this->vertexSet.begin());
+    while(!nextVertex.empty()){
+        Vertex<T> * vertex = nextVertex.front();
+        vertex->visited = true;
+        nextVertex.pop_front();
+        typename vector<Edge<T>>::iterator it = vertex->adj.begin();
+        for (it; it != vertex->adj.end(); it++){
+            if(!it->dest->visited){
+                nextVertex.push_front(it->dest);
+            } else if (isVertexInStack(it->dest, nextVertex)){
+                return false;
+            }
+        }
+
+    }
 	return true;
 }
 
-/**
- * Auxiliary function that visits a vertex (v) and its adjacent not yet visited, recursively.
- * Returns false (not acyclic) if an edge to a vertex in the stack is found.
- */
 template <class T>
-bool Graph<T>::dfsIsDAG(Vertex<T> *v) const {
-	// TODO (12 lines, mostly reused)
-	return true;
+bool isVertexInStack(Vertex<T> *v, deque<Vertex<T>* > st){
+    return find(st.begin(), st.end(), v) == st.end();
 }
 
 #endif /* GRAPH_H_ */
