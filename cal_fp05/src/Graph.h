@@ -214,26 +214,28 @@ vector<T> Graph<T>::getPath(const T &origin, const T &dest) const{
 
 template<class T>
 void Graph<T>::unweightedShortestPath(const T &orig) {
-	typename vector<Vertex<T> *>::const_iterator it;
-	queue<Vertex<T> *> nextVertex;
-	for(it = this->vertexSet.begin(); it != this->vertexSet.end(); it++){
-		(*it)->visited = false;
-	}
+    for(Vertex<T>* v: this->vertexSet){
+        v->visited = false;
+        v->dist = INF;
+        v->path = NULL;
+    }
+    Vertex<T>* v = this->findVertex(orig);
+    v->dist = 0;
+    queue<Vertex<T> *> nextVertex;
+    nextVertex.push(v);
 
-	nextVertex.push(this->findVertex(orig));
-	while(!nextVertex.empty()){
-		Vertex<T> * vertex = nextVertex.front();
-		vertex->visited = true;
-		nextVertex.pop();
-		typename vector<Edge<T>>::iterator it = vertex->adj.begin();
-		for (it; it != vertex->adj.end(); it++){
-			if(!it->dest->visited){
-				it->dest->path = vertex;
-				nextVertex.push(it->dest);
-			}
-		}
+    while (!nextVertex.empty()){
+        Vertex<T>* v = nextVertex.front();
+        nextVertex.pop();
+        for(Edge<T> edge: v->adj){
+            if(edge.dest->dist == INF){
+                edge.dest->dist = v->getDist() + 1;
+                edge.dest->path = v;
+                nextVertex.push(edge.dest);
+            }
+        }
 
-	}
+    }
 }
 
 template<class T>
