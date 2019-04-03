@@ -31,7 +31,7 @@ class Vertex {
 	int queueIndex = 0; 		// required by MutablePriorityQueue
 
 	bool processing = false;
-	void addEdge(Vertex<T> *dest, double w);
+    void addEdge(Vertex<T> *d, Vertex<T> * s, double w);
 
 public:
 	Vertex(T in);
@@ -52,8 +52,8 @@ Vertex<T>::Vertex(T in): info(in) {}
  * with a given destination vertex (d) and edge weight (w).
  */
 template <class T>
-void Vertex<T>::addEdge(Vertex<T> *d, double w) {
-	adj.push_back(Edge<T>(d, w));
+void Vertex<T>::addEdge(Vertex<T> *d, Vertex<T> * s, double w) {
+	adj.push_back(Edge<T>(d, s, w));
 }
 
 template <class T>
@@ -81,13 +81,16 @@ Vertex<T> *Vertex<T>::getPath() const {
 template <class T>
 class Edge {
 	Vertex<T> * dest;      // destination vertex
+	Vertex<T> * src;      // destination vertex
 	double weight;         // edge weight
 public:
 	Edge(Vertex<T> *d, double w);
+	Edge(Vertex<T> *d, Vertex<T>* s, double w);
 	friend class Graph<T>;
 	friend class Vertex<T>;
 };
-
+template <class T>
+Edge<T>::Edge(Vertex<T> *d, Vertex<T>* s, double w): dest(d), weight(w) , src(s){}
 template <class T>
 Edge<T>::Edge(Vertex<T> *d, double w): dest(d), weight(w) {}
 
@@ -162,7 +165,7 @@ bool Graph<T>::addEdge(const T &sourc, const T &dest, double w) {
 	auto v2 = findVertex(dest);
 	if (v1 == NULL || v2 == NULL)
 		return false;
-	v1->addEdge(v2,w);
+	v1->addEdge(v2,v1, w);
 	return true;
 }
 
@@ -240,7 +243,25 @@ void Graph<T>::unweightedShortestPath(const T &orig) {
 
 template<class T>
 void Graph<T>::bellmanFordShortestPath(const T &orig) {
-	// TODO
+    vector<Edge<T>> edgeSet;
+    for(Vertex<T> * v: this->vertexSet){
+        v->dist = INF;
+        v->path = NULL;
+        for(Edge<T> t: v->adj)
+            edgeSet.push_back(t);
+    }
+    Vertex<T> * v = this->findVertex(orig);
+    v->dist = 0;
+    for(int i = 1; i < this->vertexSet.size(); i++){
+        for(Edge<T> t: edgeSet){
+            if(t.dest->getDist() > t.src->getDist() + t.weight){
+                t.dest->dist = t.src->getDist() + t.weight;
+                t.dest->path = t.src;
+            }
+        }
+    }
+
+
 }
 
 
@@ -248,7 +269,18 @@ void Graph<T>::bellmanFordShortestPath(const T &orig) {
 
 template<class T>
 void Graph<T>::floydWarshallShortestPath() {
-	// TODO
+    int dist[this->vertexSet.size()][this->vertexSet.size()];
+    for (int i = 0; i < this->vertexSet.size(); i++)
+        for (int j = 0; j < this->vertexSet.size(); j++)
+            dist[i][j] = 0;
+    for(int k = 0; k < this->vertexSet.size(); k++){
+        for(int i = 0; i < this->vertexSet.size(); i++){
+            for(int j = 0; j < this->vertexSet.size(); j++){
+                if(dist[i][k] + dist[k][j] < dist[i][j])
+                    dist[i][j] = dist[i][k] + dist[k][j];
+            }
+        }
+    }
 }
 
 template<class T>

@@ -97,13 +97,12 @@ bool Sudoku::isComplete()
 bool Sudoku::solve()
 {
 	vector<int> lowest_solution(10);
+	int multiplicity = 1;
 	int x = -1, y = -1;
 	while (!this->isComplete()){
         for(int i = 0; i < 10; i++){
             for(int j = 0; j < 10; j++){
                 vector<int> newest_solution = this->possibleNumbers(i, j);
-                if(newest_solution.empty())
-                    continue;
                 if(newest_solution.size() < lowest_solution.size() && !newest_solution.empty()){
                     lowest_solution = newest_solution;
                     x = i;
@@ -116,11 +115,13 @@ bool Sudoku::solve()
             return false;
         this->numbers[x][y] = lowest_solution[0];
         this->countFilled++;
+        multiplicity*=lowest_solution.size();
         this->columnHasNumber[x][lowest_solution[0]] = true;
         this->lineHasNumber[y][lowest_solution[0]] = true;
         this->block3x3HasNumber[x/3][y/3][lowest_solution[0] - 1] = true;
         lowest_solution.clear();
     }
+	cout << "The multiplicity is "  << multiplicity << endl;
 	return this->isComplete();
 }
 
